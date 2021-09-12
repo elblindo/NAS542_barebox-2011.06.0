@@ -1,0 +1,73 @@
+#!/bin/sh
+
+PATH=/env/bin
+export PATH
+
+. /env/config
+#if [ -e /dev/nor0 -a -n "$nor_parts" ]; then
+#	addpart /dev/nor0 $nor_parts
+#fi
+
+#if [ -e /dev/disk0 -a -n "$disk_parts" ]; then
+#	addpart /dev/disk0 $disk_parts
+#fi
+
+if [ -e /dev/spi0 -a -n "$spi_parts" ]; then
+	addpart /dev/spi0 $spi_parts
+fi
+
+if [ -e /dev/nand0 -a -n "$nand_parts" ]; then
+	addpart /dev/nand0 $nand_parts
+
+	# Uh, oh, hush first expands wildcards and then starts executing
+	# commands. What a bug!
+	source /env/bin/hush_hack
+fi
+
+if [ -f /env/bin/init_board ]; then
+	/env/bin/init_board
+fi
+
+echo "Disabling eee function of phy 4 ..."
+phy write 4 0x1F 0x0000
+phy write 4 0x00 0x8000
+#Wait 20ms for PHY reset
+sleep 1
+phy write 4 0x1F 0x0005
+phy write 4 0x05 0x8b85
+phy write 4 0x06 0x0ae2
+phy write 4 0x1F 0x0007
+phy write 4 0x1E 0x0020
+phy write 4 0x15 0x1008
+phy write 4 0x1F 0x0000
+phy write 4 0x0D 0x0007
+phy write 4 0x0E 0x003c
+phy write 4 0x0D 0x4007
+phy write 4 0x0E 0x0000
+
+echo "Disabling eee function of phy 6 ..."
+phy write 6 0x1F 0x0000
+phy write 6 0x00 0x8000
+#Wait 20ms for PHY reset
+sleep 1
+phy write 6 0x1F 0x0005
+phy write 6 0x05 0x8b85
+phy write 6 0x06 0x0ae2
+phy write 6 0x1F 0x0007
+phy write 6 0x1E 0x0020
+phy write 6 0x15 0x1008
+phy write 6 0x1F 0x0000
+phy write 6 0x0D 0x0007
+phy write 6 0x0E 0x003c
+phy write 6 0x0D 0x4007
+phy write 6 0x0E 0x0000
+
+echo
+echo -n "Hit any key to stop autoboot: "
+timeout -a $autoboot_timeout
+if [ $? != 0 ]; then
+	. /env/bin/_update_help
+	exit
+fi
+
+boot
